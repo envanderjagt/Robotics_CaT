@@ -12,7 +12,7 @@ servo = Controller()
 servo.setSpeed(6, 5) # looking for a cat
 servo.setSpeed(8, 10) # petting
 servo.setSpeed(1, 5) # middle servo for the landing part
-channel = 8  # Top servor channel number
+channel = 8  # Top servo channel number
 change_amount = 50  #amount to change servo position of the petting motion
 
 #####################################################################################
