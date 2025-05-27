@@ -84,12 +84,12 @@ def pet_loop():
                 frame = picam2.capture_array()
 
                 #convert to grayscale
-                gray = cv2.cvtColor(frame, cv2.COLOR_RGBA2GRAY) # type: ignore
+                gray = cv2.cvtColor(frame, cv2.COLOR_RGBA2GRAY)
 
                 print(np.median(gray))
 
 
-                if np.median(gray) > 100:
+                if np.median(gray) > 100: # CHANGE THIS VALUE TO A SUITABLE AMOUNT, AROUND 105 should suffice
                     print("ITS LIGHT")
                     time.sleep(0.5)
                     servo.setTarget(channel, current_pos + 80)
@@ -121,7 +121,7 @@ def pet_loop():
                 
                 frame = picam2.capture_array()
                 
-                gray = cv2.cvtColor(frame, cv2.COLOR_RGBA2GRAY) # type: ignore
+                gray = cv2.cvtColor(frame, cv2.COLOR_RGBA2GRAY)
 
                 if np.mean(gray) > 110: #if the cat is gone means it is light again
                     picam1.close()
