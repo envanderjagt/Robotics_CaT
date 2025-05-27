@@ -7,60 +7,51 @@ from cat_detect import get_cat_probability
 
 
 
-
-
-
-# # get the mean value wihtout any detection
-# frame = picam2.capture_array()
-
-# # Convert to grayscale
-# gray = cv2.cvtColor(frame, cv2.COLOR_RGBA2GRAY) # type: ignore
-
-# baseline_mean = np.mean(gray)
-
 # Initialize servo controller
 servo = Controller()
-servo.setSpeed(6, 5)
+servo.setSpeed(6, 5) # looking for a cat
 servo.setSpeed(8, 10) # petting
-servo.setSpeed(1, 5)
-channel = 8  # Servo channel number
-change_amount = 50  # Amount to change servo position
+servo.setSpeed(1, 5) # middle servo for the landing part
+channel = 8  # Top servor channel number
+change_amount = 50  #amount to change servo position of the petting motion
 
 #####################################################################################
-#STARTING AT 4000 adn MAX is 8000
+#SERVO LIMITS: STARTING AT 4000 and MAX is 8000
 ######################################################################################
 def pet_loop():
+
+    # setup both cameras
     picam1 = Picamera2(camera_num=1)
     preview_config = picam1.create_preview_configuration()
     picam1.configure(preview_config)
     picam1.start()
-
 
     picam2 = Picamera2(camera_num=0)
     preview_config = picam2.create_preview_configuration()
     picam2.configure(preview_config)
     picam2.start()
     
-    petting = False
-    servo.setTarget(6, 4000)  # Set initial position for other servos
+    
+
+    #set initial position for all servos
+    servo.setTarget(6, 4000)
     pos_6 = 4000
-
-
+    
     servo.setTarget(1, 8000)
     pos_1 = 8000
-
 
     servo.setTarget(channel, 4000)
     current_pos = 4000
 
+    #set booleans to for phases
     move_left = False
     cat_found = False
-
+    petting = False
 
     while not cat_found:
         prob = get_cat_probability(picam1)
         print(f"Cat probability: {prob}")
-        if prob >= 0.5:
+        if prob >= 0.5: #probability threshold
             print("Cat detected! STOPPING!")
             time.sleep(1)
             cat_found = True
@@ -82,22 +73,17 @@ def pet_loop():
 
     print("DONE LOOKING< I FOUND A CAT")
 
-
+    # LANDING
     dark_seq = 0
 
-    # TODO: ADD A CLAUSE THAT MAKES THE WHILE LOOP START AGAIN FROM THE START IF LIGHT VALUES HAVE BEEN DETECTED FOR MORE THAN 5 TIMES
-    # TODO: FIND A SCRATCHER FOR AT THE EDGE
-    # TODO: REINFORCE THE BASE WITH SCREWS 
-    # TODO: FIX THE CHOPSTICK SO THAT IT IS MORE STURDY
-    # TODO: PLUSHIE?
     try:
         while True:
             
             if not petting:
-                # Capture frame
+                #capture frame
                 frame = picam2.capture_array()
 
-                # Convert to grayscale
+                #convert to grayscale
                 gray = cv2.cvtColor(frame, cv2.COLOR_RGBA2GRAY) # type: ignore
 
                 print(np.median(gray))
@@ -105,19 +91,13 @@ def pet_loop():
 
                 if np.median(gray) > 100:
                     print("ITS LIGHT")
-                    #servo.setTarget(1, pos_1 - 40)
                     time.sleep(0.5)
                     servo.setTarget(channel, current_pos + 80)
                     current_pos += 80
-                    #pos_1 -= 40
                     dark_seq = 0
                 else:
                     print("ITS DARK")
-                    #servo.setTarget(1, pos_1 + 40)
                     time.sleep(0.5)
-                    #servo.setTarget(channel, current_pos + 80)
-                    #current_pos += 80
-                    #pos_1 += 40
                     dark_seq += 1
                 time.sleep(0.5)
 
@@ -132,6 +112,7 @@ def pet_loop():
 
             else:
                 print("PETTING!")
+                #petting down
                 for i in range(10):
                     servo.setTarget(channel, current_pos + change_amount)
                     current_pos += change_amount
@@ -139,16 +120,15 @@ def pet_loop():
                 time.sleep(0.2)
                 
                 frame = picam2.capture_array()
-
-                # Convert to grayscale
+                
                 gray = cv2.cvtColor(frame, cv2.COLOR_RGBA2GRAY) # type: ignore
 
-                if np.mean(gray) > 110:
+                if np.mean(gray) > 110: #if the cat is gone means it is light again
                     picam1.close()
                     picam2.close()
                     return "gone"
                 
-                
+                #petting up
                 for i in range(10):
                     servo.setTarget(channel, current_pos - change_amount)
                     current_pos -= change_amount
@@ -157,23 +137,6 @@ def pet_loop():
 
                 
         
-        # print(f"Left: {left_avg:.1f}, Right: {right_avg:.1f}")
-
-        # # Threshold difference to avoid jitter
-        # threshold = 10
-        # current_pos = servo.getPosition(channel)
-
-        # if left_avg + threshold < right_avg:
-        #     print("Dark on left → moving servo left")
-        #     servo.setTarget(channel, current_pos + change_amount)
-        # elif right_avg + threshold < left_avg:
-        #     print("Dark on right → moving servo right")
-        #     servo.setTarget(channel, current_pos - change_amount)
-        # else:
-        #     print("Even lighting → centering servo")
-        #     servo.setTarget(channel, current_pos)
-
-        # # time.sleep(0.5)
     except KeyboardInterrupt:
         print("Stopping...")
 
@@ -181,8 +144,9 @@ def pet_loop():
         servo.setTarget(channel, current_pos)
         picam1.stop()
         picam2.stop()
-    return "WTF"
+    return "Done"
 
+#petting loop
 while True:
     pet_loop()
 
